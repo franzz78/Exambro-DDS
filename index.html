@@ -13,6 +13,8 @@
 
     <div id="notification-container" class="notification-container"></div>
 
+    <audio id="alert-sound" src="https://assets.mixkit.co/active_storage/sfx/951/951-84.wav" loop preload="auto"></audio>
+
     <div id="login-page" class="page active">
         <div class="card login-card">
             <h2><i class="fa-solid fa-user-shield"></i> Exambro Login</h2>
@@ -20,8 +22,8 @@
             
             <form id="login-form">
                 <div class="input-group">
-                    <label for="username">Username / Kode Admin</label>
-                    <input type="text" id="username" placeholder="Masukkan username..." required autocomplete="off">
+                    <label for="username">Username / Link Ujian Manual</label>
+                    <input type="text" id="username" placeholder="Masukkan username atau link..." required autocomplete="off">
                 </div>
                 <button type="submit" class="btn-primary">Masuk Aplikasi</button>
                 
@@ -39,8 +41,8 @@
 
     <div id="scanner-modal" class="modal">
         <div class="card modal-card">
-            <h3><i class="fa-solid fa-camera"></i> Scan Barcode Kartu Ujian</h3>
-            <p class="subtitle">Arahkan barcode / QR Code ke kamera</p>
+            <h3><i class="fa-solid fa-camera"></i> Scan Barcode Ujian</h3>
+            <p class="subtitle">Arahkan barcode / QR Code berisi link soal (Gform) ke kamera</p>
             <div id="qr-reader" class="qr-reader-box"></div>
             <button id="btn-close-scanner" class="btn-secondary" style="margin-top: 15px; width: 100%;">Batal</button>
         </div>
@@ -58,34 +60,26 @@
         </header>
 
         <main class="exam-container">
-            <div class="exam-content">
-                <div class="card">
-                    <h2>Lembar Soal Simulasi</h2>
-                    <hr class="divider">
-                    <p class="alert-text">
-                        <i class="fa-solid fa-triangle-exclamation"></i> 
-                        <strong>Peringatan:</strong> Jangan mengecilkan layar atau membuka split screen. Sistem mencatat setiap pelanggaran Anda!
-                    </p>
-                    <div class="quiz-placeholder">
-                        <p><strong>Soal 1:</strong> Mengapa kejujuran dalam ujian itu penting?</p>
-                        <textarea placeholder="Tulis jawaban Anda di sini..." rows="5"></textarea>
-                    </div>
-                </div>
+            <div class="exam-content-frame">
+                <iframe id="exam-iframe" src="about:blank" allow="autoplay"></iframe>
             </div>
 
             <div class="exam-sidebar">
                 <div class="card camera-card">
-                    <h4><i class="fa-solid fa-video"></i> Kamera Pengawas</h4>
+                    <h4><i class="fa-solid fa-video"></i> Pengawas Live</h4>
+                    
                     <button id="btn-start-camera" class="btn-camera-trigger">
-                        <i class="fa-solid fa-camera"></i> Hubungkan & Rekam Live
+                        <i class="fa-solid fa-camera"></i> Aktifkan Kamera
                     </button>
+
                     <div class="video-wrapper">
                         <video id="webcam" autoplay playsinline muted></video>
                         <div id="recording-badge" class="recording-badge" style="display: none;">
                             <span class="dot"></span> LIVE RECORDING
                         </div>
-                        <div id="camera-status" class="status-badge">Kamera Belum Terhubung</div>
+                        <div id="camera-status" class="status-badge">Kamera Belum Aktif</div>
                     </div>
+                    <p class="info-note" style="margin-top: 5px;">Wajib mengaktifkan kamera agar pengerjaan diverifikasi.</p>
                 </div>
             </div>
         </main>
@@ -127,3 +121,4 @@
     <script src="script.js"></script>
 </body>
 </html>
+
