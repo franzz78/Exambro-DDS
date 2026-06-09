@@ -7,20 +7,28 @@
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 <body>
+
+    <div id="notification-container" class="notification-container"></div>
 
     <div id="login-page" class="page active">
         <div class="card login-card">
             <h2><i class="fa-solid fa-user-shield"></i> Exambro Login</h2>
-            <p class="subtitle">Silahkan masuk untuk memulai ujian atau konsol admin</p>
+            <p class="subtitle">Silahkan masuk manual, pakai biometrik, atau scan kartu ujian</p>
+            
             <form id="login-form">
                 <div class="input-group">
-                    <label for="username">Username</label>
+                    <label for="username">Username / Kode Admin</label>
                     <input type="text" id="username" placeholder="Masukkan username..." required autocomplete="off">
                 </div>
                 <button type="submit" class="btn-primary">Masuk Aplikasi</button>
                 
+                <button type="button" id="btn-open-scanner" class="btn-scanner">
+                    <i class="fa-solid fa-qrcode"></i> Masuk via Scan Barcode
+                </button>
+
                 <button type="button" id="btn-biometric" class="btn-biometric" style="display: none;">
                     <i class="fa-solid fa-fingerprint"></i> Masuk dengan Sidik Jari
                 </button>
@@ -29,12 +37,24 @@
         </div>
     </div>
 
+    <div id="scanner-modal" class="modal">
+        <div class="card modal-card">
+            <h3><i class="fa-solid fa-camera"></i> Scan Barcode Kartu Ujian</h3>
+            <p class="subtitle">Arahkan barcode / QR Code ke kamera</p>
+            <div id="qr-reader" class="qr-reader-box"></div>
+            <button id="btn-close-scanner" class="btn-secondary" style="margin-top: 15px; width: 100%;">Batal</button>
+        </div>
+    </div>
+
     <div id="exam-page" class="page">
         <header class="exam-header">
             <div class="logo-area">
                 <h3><i class="fa-solid fa-graduation-cap"></i> Ruang Ujian Digital</h3>
             </div>
-            <button id="btn-logout" class="btn-danger"><i class="fa-solid fa-right-from-bracket"></i> Keluar</button>
+            <div id="exam-clock" class="exam-clock">
+                <i class="fa-solid fa-clock"></i> <span id="clock-display">00:00:00 WIB</span>
+            </div>
+            <button id="btn-trigger-logout" class="btn-danger"><i class="fa-solid fa-right-from-bracket"></i> Keluar</button>
         </header>
 
         <main class="exam-container">
@@ -44,9 +64,8 @@
                     <hr class="divider">
                     <p class="alert-text">
                         <i class="fa-solid fa-triangle-exclamation"></i> 
-                        <strong>Peringatan:</strong> Jangan mengecilkan layar, membuka split screen (layar belah), atau berpindah aplikasi. Sistem otomatis mencatat setiap pelanggaran Anda ke log admin!
+                        <strong>Peringatan:</strong> Jangan mengecilkan layar atau membuka split screen. Sistem mencatat setiap pelanggaran Anda!
                     </p>
-                    
                     <div class="quiz-placeholder">
                         <p><strong>Soal 1:</strong> Mengapa kejujuran dalam ujian itu penting?</p>
                         <textarea placeholder="Tulis jawaban Anda di sini..." rows="5"></textarea>
@@ -57,15 +76,34 @@
             <div class="exam-sidebar">
                 <div class="card camera-card">
                     <h4><i class="fa-solid fa-video"></i> Kamera Pengawas</h4>
+                    <button id="btn-start-camera" class="btn-camera-trigger">
+                        <i class="fa-solid fa-camera"></i> Hubungkan & Rekam Live
+                    </button>
                     <div class="video-wrapper">
                         <video id="webcam" autoplay playsinline muted></video>
-                        <div id="camera-status" class="status-badge">Mengaktifkan...</div>
+                        <div id="recording-badge" class="recording-badge" style="display: none;">
+                            <span class="dot"></span> LIVE RECORDING
+                        </div>
+                        <div id="camera-status" class="status-badge">Kamera Belum Terhubung</div>
                     </div>
-                    <p class="info-note">Pastikan wajah Anda tetap terlihat di kamera selama ujian berlangsung.</p>
                 </div>
             </div>
         </main>
         <div class="developer-footer">Developer: Dennis Septiano</div>
+    </div>
+
+    <div id="logout-modal" class="modal">
+        <div class="card modal-card">
+            <h3><i class="fa-solid fa-circle-question text-red"></i> Konfirmasi Selesai Ujian</h3>
+            <p class="subtitle" style="color: #fca5a5;">Ketik kata <strong style="color: #ef4444;">Selesai</strong> di bawah ini untuk menutup lembar ujian.</p>
+            <div class="input-group">
+                <input type="text" id="logout-confirm-input" placeholder="Ketik Selesai..." autocomplete="off">
+            </div>
+            <div class="modal-buttons">
+                <button id="btn-cancel-logout" class="btn-secondary">Kembali Ujian</button>
+                <button id="btn-final-logout" class="btn-danger" disabled>Keluar Sekarang</button>
+            </div>
+        </div>
     </div>
 
     <div id="admin-page" class="page">
@@ -80,8 +118,7 @@
                     <span><i class="fa-solid fa-circle text-red"></i> Live Cheat Detection Log</span>
                     <button id="btn-clear-log" class="btn-secondary"><i class="fa-solid fa-trash"></i> Bersih Log</button>
                 </div>
-                <div id="log-output" class="log-output">
-                    </div>
+                <div id="log-output" class="log-output"></div>
             </div>
         </main>
         <div class="developer-footer">Developer: Dennis Septiano</div>
@@ -90,4 +127,3 @@
     <script src="script.js"></script>
 </body>
 </html>
-
