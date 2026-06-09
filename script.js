@@ -286,4 +286,4 @@ function resetAppState() {
 
 document.getElementById('btn-admin-logout').addEventListener('click', resetAppState);
 renderLogs();
-        
+
