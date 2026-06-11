@@ -1,4 +1,4 @@
-// Konfigurasi Akun & State Aplikasi
+// Konfigurasi Akun Utama & Global State
 const ADMIN_USER = "DSSMANSALA2026##";
 let currentUser = "";
 let isExamActive = false;
@@ -6,13 +6,13 @@ let violationCount = 0;
 let clockInterval = null;
 let html5QrcodeScanner = null;
 
-// Konfigurasi Sistem Audio Anti-Hack Volume
+// Konfigurasi Kunci Audio Otomatis (Web Audio API)
 let audioCtx = null;
 let gainNode = null;
 let sourceNode = null;
 const alertSound = document.getElementById('alert-sound');
 
-// Elemen DOM
+// Elemen DOM Selector
 const loginForm = document.getElementById('login-form');
 const usernameInput = document.getElementById('username');
 const loginPage = document.getElementById('login-page');
@@ -34,7 +34,7 @@ const btnFinalLogout = document.getElementById('btn-final-logout');
 const logoutConfirmInput = document.getElementById('logout-confirm-input');
 const clockDisplay = document.getElementById('clock-display');
 
-// --- 1. ENGINE NOTIFIKASI CUSTOM BERANIMASI ---
+// --- 1. NOTIFIKASI ANIMASI CUSTOM (TOAST ENGINE) ---
 function showToast(message, type = 'info') {
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
@@ -52,15 +52,13 @@ function showToast(message, type = 'info') {
     }, 4500);
 }
 
-// --- 2. INSTALASI ALARM & LOCK VOLUME (WEB AUDIO API) ---
+// --- 2. AUDIO SECURITY HARD LOCK ENGINE (SETENGAH VOLUME BROWSER) ---
 function initAudioEngine() {
     if (!audioCtx) {
-        // Membuat jembatan kontrol audio browser internal
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         gainNode = audioCtx.createGain();
         sourceNode = audioCtx.createMediaElementSource(alertSound);
         
-        // Hubungkan: Jalur Suara -> Pengatur Volume Internal -> Speaker
         sourceNode.connect(gainNode);
         gainNode.connect(audioCtx.destination);
     }
@@ -72,12 +70,11 @@ function playSecureAlarm() {
         audioCtx.resume();
     }
     
-    // KUNCI AMALITUDO KE 0.5 (Setengah Volume Maksimal Output Browser)
-    // Walau user mematikan/mengecilkan volume tombol samping, browser dipaksa menyemburkan intensitas gelombang 50%
+    // Paksa amplitudo suara internal browser di level 0.5 (Setengah Volume Maksimal)
     gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
-    alertSound.play().catch(err => console.log("Menunggu interaksi pengguna untuk memicu audio"));
+    alertSound.play().catch(err => console.log("Menunggu interaksi awal pengguna untuk trigger audio"));
     
-    // Cegah modifikasi objek audio manual lewat inspeksi script
+    // Perlindungan lapis kedua objek media HTML5
     alertSound.volume = 1.0; 
 }
 
@@ -86,15 +83,14 @@ function stopSecureAlarm() {
     alertSound.currentTime = 0;
 }
 
-// Proteksi Tambahan: Jika siswa mencoba memanipulasi pemutar audio
+// Kunci volume paksa: Jika siswa mencoba menurunkan volume aplikasi via script/elemen
 alertSound.addEventListener('volumechange', () => {
-    if (isExamActive && alertSound.paused === false) {
-        // Jika volume diganti paksa sewaktu melanggar, balikan paksa amplitudonya
+    if (isExamActive && !alertSound.paused) {
         if(gainNode) gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
     }
 });
 
-// --- 3. ENGINE JAM JAKARTA ---
+// --- 3. WIDGET REALTIME JAM ASIA/JAKARTA (WIB) ---
 function startJakartaClock() {
     if(clockInterval) clearInterval(clockInterval);
     clockInterval = setInterval(() => {
@@ -111,7 +107,7 @@ function getJakartaTimestamp() {
     }).format(new Date()).replace(/\./g, ':');
 }
 
-// --- 4. SCANNER QR CODE / BARCODE (LINK INTEGRASI WEBSITE) ---
+// --- 4. INTEGRASI KAMERA BARCODE (LANGSUNG MENUJU SOAL) ---
 btnOpenScanner.addEventListener('click', () => {
     scannerModal.classList.add('open');
     html5QrcodeScanner = new Html5QrcodeScanner("qr-reader", { fps: 15, qrbox: 250 });
@@ -119,9 +115,9 @@ btnOpenScanner.addEventListener('click', () => {
 });
 
 function onScanSuccess(decodedText, decodedResult) {
-    // Validasi apakah barcode berisi tautan website (misal gform/situs sekolah)
+    // Validasi apakah isi dari barcode berupa URL link soal (gform/situs sekolah)
     if (decodedText.startsWith('http://') || decodedText.startsWith('https://')) {
-        showToast("Tautan Barcode Ditemukan! Mengalihkan ke halaman ujian...", "success");
+        showToast("Barcode Soal Terbaca! Membuka lembar soal...", "success");
         
         html5QrcodeScanner.clear();
         scannerModal.classList.remove('open');
@@ -129,11 +125,11 @@ function onScanSuccess(decodedText, decodedResult) {
         currentUser = "Siswa (Scan Barcode)";
         switchPage('exam-page');
         
-        // Memasukkan URL Google Form hasil scan langsung ke dalam Iframe Exambro
+        // Membuka link soal langsung di dalam iframe aplikasi agar tidak kabur ke Chrome
         examIframe.src = decodedText;
         startExamSession();
     } else {
-        showToast("Barcode valid, namun bukan merupakan tautan URL Ujian!", "danger");
+        showToast("Isi Barcode valid, namun bukan merupakan link tautan URL Ujian!", "danger");
     }
 }
 
@@ -145,7 +141,7 @@ btnCloseScanner.addEventListener('click', () => {
     showToast("Pemindaian barcode dibatalkan.", "info");
 });
 
-// --- 5. LOGIN MANUAL & SIDIK JARI ---
+// --- 5. LOGIKA AUTENTIKASI ADMIN & LOGIN MANUAL ---
 async function checkBiometricSupport() {
     if (window.PublicKeyCredential && typeof window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function') {
         try {
@@ -174,7 +170,7 @@ btnBiometric.addEventListener('click', async () => {
             currentUser = "Admin (Biometric)";
             usernameInput.value = ADMIN_USER;
             switchPage('admin-page');
-            addLog("SYSTEM", `Admin [Dennis Septiano] masuk via Sidik Jari pada ${getJakartaTimestamp()} WIB.`);
+            addLog("SYSTEM", `Admin masuk via Sidik Jari pada pukul ${getJakartaTimestamp()} WIB.`);
             renderLogs();
             showToast("Login Biometrik Berhasil! Selamat Datang Dennis Septiano.", "success");
         }
@@ -190,18 +186,18 @@ loginForm.addEventListener('submit', (e) => {
     if (inputUser === ADMIN_USER) {
         currentUser = "Admin";
         switchPage('admin-page');
-        addLog("SYSTEM", `Admin login manual pada ${getJakartaTimestamp()} WIB.`);
+        addLog("SYSTEM", `Admin manual login pada pukul ${getJakartaTimestamp()} WIB.`);
         renderLogs();
         showToast("Selamat Datang Admin Dennis Septiano.", "success");
     } else {
-        // Jalur login manual jika menginputkan tautan manual
+        // Fallback login manual link soal jika tidak menggunakan barcode
         if (inputUser.startsWith('http')) {
             currentUser = "Siswa (Manual Link)";
             switchPage('exam-page');
             examIframe.src = inputUser;
             startExamSession();
         } else {
-            showToast("Untuk login siswa, masukkan link ujian atau gunakan tombol Scan Barcode!", "danger");
+            showToast("Siswa wajib menggunakan tombol 'Scan Barcode Soal' atau input Link Soal langsung!", "danger");
         }
     }
 });
@@ -211,18 +207,16 @@ function switchPage(pageId) {
     document.getElementById(pageId).classList.add('active');
 }
 
-// --- 6. PENGAWASAN LAYAR BELAH & DETEKSI KECURANGAN ---
+// --- 6. LIVE SENSOR DETEKSI KECURANGAN LAYAR BELAH ---
 function startExamSession() {
     isExamActive = true;
     violationCount = 0;
     startJakartaClock();
-    
-    // Inisialisasi awal Audio Engine saat halaman diklik siswa pertama kali
-    initAudioEngine();
+    initAudioEngine(); // Siapkan engine suara
 
-    addLog("SYSTEM", `Siswa memulai ujian pada link: ${examIframe.src}`);
+    addLog("SYSTEM", `Siswa masuk lembar soal: ${examIframe.src}`);
 
-    // Listener pendeteksi fokus jendela layar belah / split screen
+    // Daftarkan listener fokus aplikasi
     window.addEventListener('blur', reportViolation);
     document.addEventListener('visibilitychange', handleVisibility);
 }
@@ -236,15 +230,15 @@ function reportViolation() {
     violationCount++;
     const timestamp = getJakartaTimestamp();
     
-    // BUNYIKAN ALARM SECARA OTOMATIS DAN PAKSA LOCK DI SETENGAH VOLUME
+    // NYALAKAN ALARM DAN KUNCI DI SETENGAH VOLUME OTOMATIS
     playSecureAlarm();
     
-    showToast(`PERINGATAN KECURANGAN! Dilarang membelah layar/membuka Chrome! Alarm berbunyi kencang.`, "danger");
-    addLog("CHEAT", `[${timestamp} WIB] SISWA terdeteksi split-screen/pindah tab! (Pelanggaran ke-${violationCount})`);
+    showToast(`PELANGGARAN TERDETEKSI! Jangan membelah layar/buka tab lain! Alarm aktif setengah volume.`, "danger");
+    addLog("CHEAT", `[${timestamp} WIB] SISWA melanggar split-screen atau ganti aplikasi! (Pelanggaran ke-${violationCount})`);
     renderLogs();
 }
 
-// --- 7. LOGIKA TOMBOL KELUAR WAJIB KETIK "Selesai" ---
+// --- 7. LOGIKA VALIDASI TOMBOL KELUAR WAJIB KETIK "Selesai" ---
 btnTriggerLogout.addEventListener('click', () => {
     logoutModal.classList.add('open');
     logoutConfirmInput.value = "";
@@ -253,6 +247,7 @@ btnTriggerLogout.addEventListener('click', () => {
 });
 
 logoutConfirmInput.addEventListener('input', () => {
+    // Validasi pengetikan kata sensitif "Selesai"
     if (logoutConfirmInput.value.trim() === "Selesai") {
         btnFinalLogout.disabled = false;
     } else {
@@ -266,12 +261,12 @@ btnCancelLogout.addEventListener('click', () => {
 
 btnFinalLogout.addEventListener('click', () => {
     logoutModal.classList.remove('open');
-    stopSecureAlarm(); // Matikan alarm apabila keluar secara sah
-    showToast("Sesi ujian ditutup dengan aman.", "success");
+    stopSecureAlarm(); // Matikan alarm jika siswa keluar secara valid
+    showToast("Berhasil keluar dari ujian dengan aman.", "success");
     resetAppState();
 });
 
-// --- 8. LOGS MANAGEMENT ---
+// --- 8. MANAGEMENT LOG LOCAL STORAGE ---
 function addLog(type, message) {
     let logs = JSON.parse(localStorage.getItem('exambro_logs')) || [];
     logs.push({ type, message });
@@ -314,4 +309,3 @@ function resetAppState() {
 
 document.getElementById('btn-admin-logout').addEventListener('click', resetAppState);
 renderLogs();
-    
