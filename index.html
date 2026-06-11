@@ -22,17 +22,17 @@
             
             <form id="login-form">
                 <div class="input-group">
-                    <label for="username">Username / Link Ujian Manual</label>
-                    <input type="text" id="username" placeholder="Masukkan username atau link..." required autocomplete="off">
+                    <label for="username">Username / Kode Admin</label>
+                    <input type="text" id="username" placeholder="Masukkan username atau kode admin..." required autocomplete="off">
                 </div>
                 <button type="submit" class="btn-primary">Masuk Aplikasi</button>
                 
                 <button type="button" id="btn-open-scanner" class="btn-scanner">
-                    <i class="fa-solid fa-qrcode"></i> Masuk via Scan Barcode
+                    <i class="fa-solid fa-qrcode"></i> Masuk via Scan Barcode Soal
                 </button>
 
                 <button type="button" id="btn-biometric" class="btn-biometric" style="display: none;">
-                    <i class="fa-solid fa-fingerprint"></i> Masuk dengan Sidik Jari
+                    <i class="fa-solid fa-fingerprint"></i> Masuk dengan Sidik Jari (Admin)
                 </button>
             </form>
             <div class="developer-tag">Developer: Dennis Septiano</div>
@@ -42,7 +42,7 @@
     <div id="scanner-modal" class="modal">
         <div class="card modal-card">
             <h3><i class="fa-solid fa-camera"></i> Scan Barcode Ujian</h3>
-            <p class="subtitle">Arahkan barcode / QR Code berisi link soal (Gform) ke kamera</p>
+            <p class="subtitle">Arahkan QR Code / Barcode berisi link soal ujian ke kamera</p>
             <div id="qr-reader" class="qr-reader-box"></div>
             <button id="btn-close-scanner" class="btn-secondary" style="margin-top: 15px; width: 100%;">Batal</button>
         </div>
@@ -59,30 +59,10 @@
             <button id="btn-trigger-logout" class="btn-danger"><i class="fa-solid fa-right-from-bracket"></i> Keluar</button>
         </header>
 
-        <main class="exam-container">
-            <div class="exam-content-frame">
-                <iframe id="exam-iframe" src="about:blank" allow="autoplay"></iframe>
-            </div>
-
-            <div class="exam-sidebar">
-                <div class="card camera-card">
-                    <h4><i class="fa-solid fa-video"></i> Pengawas Live</h4>
-                    
-                    <button id="btn-start-camera" class="btn-camera-trigger">
-                        <i class="fa-solid fa-camera"></i> Aktifkan Kamera
-                    </button>
-
-                    <div class="video-wrapper">
-                        <video id="webcam" autoplay playsinline muted></video>
-                        <div id="recording-badge" class="recording-badge" style="display: none;">
-                            <span class="dot"></span> LIVE RECORDING
-                        </div>
-                        <div id="camera-status" class="status-badge">Kamera Belum Aktif</div>
-                    </div>
-                    <p class="info-note" style="margin-top: 5px;">Wajib mengaktifkan kamera agar pengerjaan diverifikasi.</p>
-                </div>
-            </div>
+        <main class="iframe-exam-wrapper">
+            <iframe id="exam-iframe" src="about:blank" allow="autoplay"></iframe>
         </main>
+        
         <div class="developer-footer">Developer: Dennis Septiano</div>
     </div>
 
@@ -91,7 +71,7 @@
             <h3><i class="fa-solid fa-circle-question text-red"></i> Konfirmasi Selesai Ujian</h3>
             <p class="subtitle" style="color: #fca5a5;">Ketik kata <strong style="color: #ef4444;">Selesai</strong> di bawah ini untuk menutup lembar ujian.</p>
             <div class="input-group">
-                <input type="text" id="logout-confirm-input" placeholder="Ketik Selesai..." autocomplete="off">
+                <input type="text" id="logout-confirm-input" placeholder="Ketik Selesai di sini..." autocomplete="off">
             </div>
             <div class="modal-buttons">
                 <button id="btn-cancel-logout" class="btn-secondary">Kembali Ujian</button>
