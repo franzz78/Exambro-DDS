@@ -6,6 +6,9 @@ let violationCount = 0;
 let clockInterval = null;
 let html5QrcodeScanner = null;
 
+// State Baru Kontrol Akses Admin (Default Terbuka)
+let isGateOpen = localStorage.getItem('exambro_gate_status') !== 'closed';
+
 // Konfigurasi Kunci Audio Otomatis (Web Audio API)
 let audioCtx = null;
 let gainNode = null;
@@ -20,6 +23,7 @@ const examPage = document.getElementById('exam-page');
 const adminPage = document.getElementById('admin-page');
 const examIframe = document.getElementById('exam-iframe');
 const logOutput = document.getElementById('log-output');
+const gateStatusBadge = document.getElementById('gate-status-badge');
 
 const notificationContainer = document.getElementById('notification-container');
 const btnBiometric = document.getElementById('btn-biometric');
@@ -33,6 +37,10 @@ const btnCancelLogout = document.getElementById('btn-cancel-logout');
 const btnFinalLogout = document.getElementById('btn-final-logout');
 const logoutConfirmInput = document.getElementById('logout-confirm-input');
 const clockDisplay = document.getElementById('clock-display');
+
+// Elemen Baru Tombol Admin Akses
+const btnGateOpen = document.getElementById('btn-gate-open');
+const btnGateClose = document.getElementById('btn-gate-close');
 
 // --- 1. NOTIFIKASI ANIMASI CUSTOM (TOAST ENGINE) ---
 function showToast(message, type = 'info') {
@@ -52,7 +60,30 @@ function showToast(message, type = 'info') {
     }, 4500);
 }
 
-// --- 2. AUDIO SECURITY HARD LOCK ENGINE (SETENGAH VOLUME BROWSER) ---
+// --- 2. FITUR DETEKSI NAMA DEVICE/PERANGKAT OTOMATIS ---
+function getDeviceName() {
+    const ua = navigator.userAgent;
+    let deviceName = "Unknown Device";
+    
+    if (/android/i.test(ua)) {
+        // Coba ekstrak model spesifik tipe HP Android jika tertera
+        const match = ua.match(/Android\s([0-9\.]+);\s([^;)]+)/);
+        deviceName = match ? `Android (${match[2]})` : "Perangkat Android";
+    } else if (/iPhone/i.test(ua)) {
+        deviceName = "Apple iPhone";
+    } else if (/iPad/i.test(ua)) {
+        deviceName = "Apple iPad";
+    } else if (/Windows NT/i.test(ua)) {
+        deviceName = "PC / Laptop Windows";
+    } else if (/Macintosh/i.test(ua)) {
+        deviceName = "Apple MacBook/Mac";
+    } else if (/Linux/i.test(ua)) {
+        deviceName = "Linux Desktop";
+    }
+    return deviceName;
+}
+
+// --- 3. AUDIO LOCK ENGINE (AMPLITUDO 0.5 - ANTI-LAYAR BELAH) ---
 function initAudioEngine() {
     if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -69,12 +100,9 @@ function playSecureAlarm() {
     if (audioCtx.state === 'suspended') {
         audioCtx.resume();
     }
-    
-    // Paksa amplitudo suara internal browser di level 0.5 (Setengah Volume Maksimal)
+    // Paksa intensitas suara di level tengah (0.5), walau volume fisik dikecilkan siswa, audio browser tetap memekik
     gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
-    alertSound.play().catch(err => console.log("Menunggu interaksi awal pengguna untuk trigger audio"));
-    
-    // Perlindungan lapis kedua objek media HTML5
+    alertSound.play().catch(err => console.log("Menunggu ketukan layar siswa untuk inisialisasi audio"));
     alertSound.volume = 1.0; 
 }
 
@@ -83,14 +111,13 @@ function stopSecureAlarm() {
     alertSound.currentTime = 0;
 }
 
-// Kunci volume paksa: Jika siswa mencoba menurunkan volume aplikasi via script/elemen
 alertSound.addEventListener('volumechange', () => {
     if (isExamActive && !alertSound.paused) {
         if(gainNode) gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
     }
 });
 
-// --- 3. WIDGET REALTIME JAM ASIA/JAKARTA (WIB) ---
+// --- 4. WIDGET JAM REALTIME JAKARTA ---
 function startJakartaClock() {
     if(clockInterval) clearInterval(clockInterval);
     clockInterval = setInterval(() => {
@@ -107,29 +134,72 @@ function getJakartaTimestamp() {
     }).format(new Date()).replace(/\./g, ':');
 }
 
-// --- 4. INTEGRASI KAMERA BARCODE (LANGSUNG MENUJU SOAL) ---
+// --- 5. MANAGEMENT FUNGSI KONTROL GERBANG AKSES UJIAN ---
+function updateGateUI() {
+    if (isGateOpen) {
+        gateStatusBadge.className = "gate-status open";
+        gateStatusBadge.innerHTML = '<i class="fa-solid fa-door-open"></i> Akses Ujian: TERBUKA';
+        btnGateOpen.className = "btn-success-active";
+        btnGateClose.className = "btn-danger-outline";
+    } else {
+        gateStatusBadge.className = "gate-status closed";
+        gateStatusBadge.innerHTML = '<i class="fa-solid fa-lock"></i> Akses Ujian: DITUTUP ADMIN';
+        btnGateOpen.className = "btn-success-active inactive";
+        btnGateClose.className = "btn-danger-outline active";
+    }
+}
+
+btnGateOpen.addEventListener('click', () => {
+    isGateOpen = true;
+    localStorage.setItem('exambro_gate_status', 'open');
+    updateGateUI();
+    addLog("SYSTEM", `[${getJakartaTimestamp()} WIB] KONTROL: Admin membuka akses gerbang masuk ujian.`);
+    renderLogs();
+    showToast("Gerbang akses ujian berhasil DIBUKA untuk siswa.", "success");
+});
+
+btnGateClose.addEventListener('click', () => {
+    isGateOpen = false;
+    localStorage.setItem('exambro_gate_status', 'closed');
+    updateGateUI();
+    addLog("SYSTEM", `[${getJakartaTimestamp()} WIB] KONTROL: Admin menutup total gerbang masuk ujian.`);
+    renderLogs();
+    showToast("Gerbang akses ujian berhasil DITUTUP. Siswa tidak bisa masuk!", "danger");
+});
+
+// --- 6. INTEGRASI KAMERA SCANNER BARCODE SOAL ---
 btnOpenScanner.addEventListener('click', () => {
+    // PROTEKSI UTAMA: Cek apakah Admin sedang menutup akses gerbang ujian
+    if (!isGateOpen) {
+        showToast("Gagal Masuk! Akses ujian saat ini ditutup/dikunci oleh Admin.", "danger");
+        return;
+    }
     scannerModal.classList.add('open');
     html5QrcodeScanner = new Html5QrcodeScanner("qr-reader", { fps: 15, qrbox: 250 });
     html5QrcodeScanner.render(onScanSuccess, onScanFailure);
 });
 
 function onScanSuccess(decodedText, decodedResult) {
-    // Validasi apakah isi dari barcode berupa URL link soal (gform/situs sekolah)
     if (decodedText.startsWith('http://') || decodedText.startsWith('https://')) {
-        showToast("Barcode Soal Terbaca! Membuka lembar soal...", "success");
+        // Cek kembali perlindungan gerbang sebelum merender iframe soal
+        if (!isGateOpen) {
+            showToast("Akses mendadak dikunci oleh Admin!", "danger");
+            html5QrcodeScanner.clear();
+            scannerModal.classList.remove('open');
+            return;
+        }
         
+        showToast("Barcode valid! Memuat perangkat dan mengunci lembar soal...", "success");
         html5QrcodeScanner.clear();
         scannerModal.classList.remove('open');
         
         currentUser = "Siswa (Scan Barcode)";
         switchPage('exam-page');
         
-        // Membuka link soal langsung di dalam iframe aplikasi agar tidak kabur ke Chrome
         examIframe.src = decodedText;
         startExamSession();
     } else {
-        showToast("Isi Barcode valid, namun bukan merupakan link tautan URL Ujian!", "danger");
+        showToast("Isi Barcode salah! Bukan tautan website lembar soal.", "danger");
     }
 }
 
@@ -141,7 +211,7 @@ btnCloseScanner.addEventListener('click', () => {
     showToast("Pemindaian barcode dibatalkan.", "info");
 });
 
-// --- 5. LOGIKA AUTENTIKASI ADMIN & LOGIN MANUAL ---
+// --- 7. SISTEM LOGIN BIOMETRIK & KODE MANUAL ---
 async function checkBiometricSupport() {
     if (window.PublicKeyCredential && typeof window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function') {
         try {
@@ -170,7 +240,7 @@ btnBiometric.addEventListener('click', async () => {
             currentUser = "Admin (Biometric)";
             usernameInput.value = ADMIN_USER;
             switchPage('admin-page');
-            addLog("SYSTEM", `Admin masuk via Sidik Jari pada pukul ${getJakartaTimestamp()} WIB.`);
+            addLog("SYSTEM", `Admin [Dennis Septiano] masuk via Sidik Jari pada pukul ${getJakartaTimestamp()} WIB.`);
             renderLogs();
             showToast("Login Biometrik Berhasil! Selamat Datang Dennis Septiano.", "success");
         }
@@ -190,14 +260,17 @@ loginForm.addEventListener('submit', (e) => {
         renderLogs();
         showToast("Selamat Datang Admin Dennis Septiano.", "success");
     } else {
-        // Fallback login manual link soal jika tidak menggunakan barcode
+        if (!isGateOpen) {
+            showToast("Akses masuk ditutup oleh Admin!", "danger");
+            return;
+        }
         if (inputUser.startsWith('http')) {
-            currentUser = "Siswa (Manual Link)";
+            currentUser = "Siswa (Manual Tautan)";
             switchPage('exam-page');
             examIframe.src = inputUser;
             startExamSession();
         } else {
-            showToast("Siswa wajib menggunakan tombol 'Scan Barcode Soal' atau input Link Soal langsung!", "danger");
+            showToast("Gunakan tombol 'Scan Barcode Soal' atau input URL lengkap!", "danger");
         }
     }
 });
@@ -207,16 +280,20 @@ function switchPage(pageId) {
     document.getElementById(pageId).classList.add('active');
 }
 
-// --- 6. LIVE SENSOR DETEKSI KECURANGAN LAYAR BELAH ---
+// --- 8. LIVE PENGAWASAN LAYAR BELAH (ANTI SPLIT-SCREEN) ---
 function startExamSession() {
     isExamActive = true;
     violationCount = 0;
     startJakartaClock();
-    initAudioEngine(); // Siapkan engine suara
+    initAudioEngine();
 
-    addLog("SYSTEM", `Siswa masuk lembar soal: ${examIframe.src}`);
+    // Deteksi nama device otomatis siswa yang masuk
+    const deviceSiswa = getDeviceName();
 
-    // Daftarkan listener fokus aplikasi
+    addLog("SYSTEM", `Siswa masuk ujian menggunakan DEVICE: [${deviceSiswa}] pada pukul ${getJakartaTimestamp()} WIB.`);
+    renderLogs();
+
+    // Jalankan deteksi pengunci layar belah / kehilangan fokus tab
     window.addEventListener('blur', reportViolation);
     document.addEventListener('visibilitychange', handleVisibility);
 }
@@ -229,16 +306,17 @@ function reportViolation() {
     if (!isExamActive) return;
     violationCount++;
     const timestamp = getJakartaTimestamp();
+    const deviceSiswa = getDeviceName();
     
-    // NYALAKAN ALARM DAN KUNCI DI SETENGAH VOLUME OTOMATIS
+    // Bunyikan sirene kencang di level gain browser 0.5
     playSecureAlarm();
     
-    showToast(`PELANGGARAN TERDETEKSI! Jangan membelah layar/buka tab lain! Alarm aktif setengah volume.`, "danger");
-    addLog("CHEAT", `[${timestamp} WIB] SISWA melanggar split-screen atau ganti aplikasi! (Pelanggaran ke-${violationCount})`);
+    showToast(`ALARM! Dilarang membelah layar (Split Screen) atau pindah tab!`, "danger");
+    addLog("CHEAT", `[${timestamp} WIB] PELANGGARAN: Siswa di perangkat [${deviceSiswa}] mencoba membelah layar/buka tab lain! (Ke-${violationCount})`);
     renderLogs();
 }
 
-// --- 7. LOGIKA VALIDASI TOMBOL KELUAR WAJIB KETIK "Selesai" ---
+// --- 9. TOMBOL KELUAR VALIDASI TEKS "Selesai" ---
 btnTriggerLogout.addEventListener('click', () => {
     logoutModal.classList.add('open');
     logoutConfirmInput.value = "";
@@ -247,7 +325,6 @@ btnTriggerLogout.addEventListener('click', () => {
 });
 
 logoutConfirmInput.addEventListener('input', () => {
-    // Validasi pengetikan kata sensitif "Selesai"
     if (logoutConfirmInput.value.trim() === "Selesai") {
         btnFinalLogout.disabled = false;
     } else {
@@ -261,12 +338,12 @@ btnCancelLogout.addEventListener('click', () => {
 
 btnFinalLogout.addEventListener('click', () => {
     logoutModal.classList.remove('open');
-    stopSecureAlarm(); // Matikan alarm jika siswa keluar secara valid
-    showToast("Berhasil keluar dari ujian dengan aman.", "success");
+    stopSecureAlarm();
+    showToast("Sesi pengerjaan ditutup dengan aman.", "success");
     resetAppState();
 });
 
-// --- 8. MANAGEMENT LOG LOCAL STORAGE ---
+// --- 10. MANAGEMENT REKAP LOG LOCALSTORAGE ---
 function addLog(type, message) {
     let logs = JSON.parse(localStorage.getItem('exambro_logs')) || [];
     logs.push({ type, message });
@@ -277,7 +354,7 @@ function renderLogs() {
     logOutput.innerHTML = "";
     let logs = JSON.parse(localStorage.getItem('exambro_logs')) || [];
     if (logs.length === 0) {
-        logOutput.innerHTML = '<div class="log-item system">[SYSTEM] Belum ada aktivitas kecurangan terekam.</div>';
+        logOutput.innerHTML = '<div class="log-item system">[SYSTEM] Belum ada aktivitas terekam.</div>';
         return;
     }
     logs.forEach(item => {
@@ -290,7 +367,7 @@ function renderLogs() {
 }
 
 document.getElementById('btn-clear-log').addEventListener('click', () => {
-    if(confirm("Hapus seluruh catatan riwayat kecurangan?")) {
+    if(confirm("Hapus seluruh catatan riwayat kecurangan dan nama device?")) {
         localStorage.removeItem('exambro_logs');
         renderLogs();
     }
@@ -308,4 +385,8 @@ function resetAppState() {
 }
 
 document.getElementById('btn-admin-logout').addEventListener('click', resetAppState);
+
+// Inisialisasi awal UI saat memuat halaman pertama kali
+updateGateUI();
 renderLogs();
+                              
