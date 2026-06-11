@@ -13,20 +13,20 @@
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
 body { background: radial-gradient(circle at top right, #1e1b4b, var(--bg-dark)); color: var(--text-main); min-height: 100vh; overflow-x: hidden; }
 
-/* Struktur SPA */
+/* Navigasi Aplikasi SPA */
 .page { display: none; min-height: 100vh; animation: fadeIn 0.4s ease-in-out; }
 .page.active { display: flex; flex-direction: column; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-/* Card Glassmorphism */
+/* Efek Kaca Glassmorphism */
 .card { background: var(--bg-card); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid var(--border-color); border-radius: 16px; padding: 24px; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); }
 
-/* Indikator Akses Gerbang di Login */
+/* Indikator Status Gerbang Akses */
 .gate-status { padding: 10px; border-radius: 8px; font-weight: bold; font-size: 13px; margin-bottom: 16px; text-align: center; border: 1px solid transparent; }
 .gate-status.open { background: rgba(34, 197, 94, 0.15); color: #4ade80; border-color: rgba(34, 197, 94, 0.3); }
 .gate-status.closed { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border-color: rgba(239, 68, 68, 0.3); animation: pulseRed 2s infinite; }
 
-/* Sistem Notifikasi Toast */
+/* Notifikasi Animasi */
 .notification-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 12px; max-width: 350px; width: 100%; }
 .toast { background: rgba(15, 23, 42, 0.9); border-left: 5px solid var(--primary); padding: 16px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.4); color: white; display: flex; align-items: center; gap: 12px; font-size: 14px; backdrop-filter: blur(8px); animation: slideIn 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards; }
 .toast.success { border-left-color: var(--success); }
@@ -36,11 +36,11 @@ body { background: radial-gradient(circle at top right, #1e1b4b, var(--bg-dark))
 @keyframes slideIn { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(120%); opacity: 0; } }
 
-/* Iframe Fullscreen Viewport */
+/* Kontainer Fullscreen Iframe Soal */
 .iframe-exam-wrapper { flex: 1; width: 100%; height: calc(100vh - 70px); background: #ffffff; overflow: hidden; }
 #exam-iframe { width: 100%; height: 100%; border: none; background: #ffffff; }
 
-/* Modal Jendela Pop-up */
+/* Pop-up Modals */
 .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); z-index: 5000; display: none; align-items: center; justify-content: center; padding: 20px; }
 .modal.open { display: flex; }
 .modal-card { width: 100%; max-width: 450px; text-align: center; }
@@ -48,14 +48,14 @@ body { background: radial-gradient(circle at top right, #1e1b4b, var(--bg-dark))
 .modal-buttons button { flex: 1; }
 .qr-reader-box { width: 100%; max-width: 350px; margin: 0 auto; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color); background: #000; }
 
-/* Panel Aksi Admin (Buka / Tutup Akses) */
+/* Panel Kontrol Admin (Buka / Tutup Akses) */
 .admin-action-buttons { display: flex; gap: 16px; margin-top: 10px; }
 .btn-success-active { background: var(--success); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
 .btn-danger-outline { background: transparent; color: var(--danger); border: 2px solid var(--danger); padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
 .btn-success-active.inactive { background: transparent; color: var(--success); border: 2px solid var(--success); }
 .btn-danger-outline.active { background: var(--danger); color: white; }
 
-/* Komponen Tombol Umum */
+/* Aturan Tombol */
 .btn-primary, .btn-danger, .btn-secondary, .btn-scanner, .btn-biometric { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
 .btn-primary { background: var(--primary); color: white; }
 .btn-primary:hover { background: var(--primary-hover); }
@@ -76,7 +76,7 @@ body { background: radial-gradient(circle at top right, #1e1b4b, var(--bg-dark))
 .exam-header .btn-danger, .admin-header .btn-danger { width: auto; padding: 8px 16px; font-size: 14px; }
 .exam-clock { background: rgba(30, 41, 59, 0.8); border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 30px; font-size: 14px; font-weight: bold; color: #38bdf8; display: flex; align-items: center; gap: 8px; }
 
-/* Admin View Logger */
+/* Admin Logs Terminal */
 .admin-container { padding: 32px 5%; flex: 1; }
 .console-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
 .text-red { color: var(--danger); }
@@ -87,3 +87,4 @@ body { background: radial-gradient(circle at top right, #1e1b4b, var(--bg-dark))
 .developer-footer, .developer-tag { text-align: center; padding: 12px; font-size: 11px; color: var(--text-muted); }
 
 @keyframes pulseRed { 50% { opacity: 0.6; } }
+             
