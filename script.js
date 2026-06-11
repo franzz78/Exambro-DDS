@@ -1,21 +1,23 @@
-// Konfigurasi Akun Utama & Global State
+// Konfigurasi Utama & Tautan Google Form Soal Bawaan
 const ADMIN_USER = "DSSMANSALA2026##";
+const DEFAULT_EXAM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSeko9XAv0x9uHmaOFHp2LTW5-vJv3xLFhtPm8kHLiXc8jN6qg/viewform";
+
 let currentUser = "";
 let isExamActive = false;
 let violationCount = 0;
 let clockInterval = null;
 let html5QrcodeScanner = null;
 
-// State Baru Kontrol Akses Admin (Default Terbuka)
+// Mengambil status gerbang akses kontrol admin (Default: Terbuka)
 let isGateOpen = localStorage.getItem('exambro_gate_status') !== 'closed';
 
-// Konfigurasi Kunci Audio Otomatis (Web Audio API)
+// Engine Kontrol Frekuensi Audio (Web Audio API)
 let audioCtx = null;
 let gainNode = null;
 let sourceNode = null;
 const alertSound = document.getElementById('alert-sound');
 
-// Elemen DOM Selector
+// DOM Selector
 const loginForm = document.getElementById('login-form');
 const usernameInput = document.getElementById('username');
 const loginPage = document.getElementById('login-page');
@@ -38,11 +40,10 @@ const btnFinalLogout = document.getElementById('btn-final-logout');
 const logoutConfirmInput = document.getElementById('logout-confirm-input');
 const clockDisplay = document.getElementById('clock-display');
 
-// Elemen Baru Tombol Admin Akses
 const btnGateOpen = document.getElementById('btn-gate-open');
 const btnGateClose = document.getElementById('btn-gate-close');
 
-// --- 1. NOTIFIKASI ANIMASI CUSTOM (TOAST ENGINE) ---
+// --- 1. SUNTIKAN TOAST NOTIFICATION ---
 function showToast(message, type = 'info') {
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
@@ -60,13 +61,12 @@ function showToast(message, type = 'info') {
     }, 4500);
 }
 
-// --- 2. FITUR DETEKSI NAMA DEVICE/PERANGKAT OTOMATIS ---
+// --- 2. DETEKSI IDENTITAS & NAMA DEVICE ---
 function getDeviceName() {
     const ua = navigator.userAgent;
     let deviceName = "Unknown Device";
     
     if (/android/i.test(ua)) {
-        // Coba ekstrak model spesifik tipe HP Android jika tertera
         const match = ua.match(/Android\s([0-9\.]+);\s([^;)]+)/);
         deviceName = match ? `Android (${match[2]})` : "Perangkat Android";
     } else if (/iPhone/i.test(ua)) {
@@ -76,14 +76,12 @@ function getDeviceName() {
     } else if (/Windows NT/i.test(ua)) {
         deviceName = "PC / Laptop Windows";
     } else if (/Macintosh/i.test(ua)) {
-        deviceName = "Apple MacBook/Mac";
-    } else if (/Linux/i.test(ua)) {
-        deviceName = "Linux Desktop";
+        deviceName = "Apple MacBook";
     }
     return deviceName;
 }
 
-// --- 3. AUDIO LOCK ENGINE (AMPLITUDO 0.5 - ANTI-LAYAR BELAH) ---
+// --- 3. POWER ENGINE AUDIO ALARM LOCK (SETENGAH VOLUME BROWSER) ---
 function initAudioEngine() {
     if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -100,9 +98,9 @@ function playSecureAlarm() {
     if (audioCtx.state === 'suspended') {
         audioCtx.resume();
     }
-    // Paksa intensitas suara di level tengah (0.5), walau volume fisik dikecilkan siswa, audio browser tetap memekik
+    // Set tingkatan penguatan gelombang suara konstan di amplitudo tengah (0.5)
     gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
-    alertSound.play().catch(err => console.log("Menunggu ketukan layar siswa untuk inisialisasi audio"));
+    alertSound.play().catch(err => console.log("Menunggu instruksi ketuk layar awal"));
     alertSound.volume = 1.0; 
 }
 
@@ -117,7 +115,7 @@ alertSound.addEventListener('volumechange', () => {
     }
 });
 
-// --- 4. WIDGET JAM REALTIME JAKARTA ---
+// --- 4. JAM REALTIME DIGITAL ASIA/JAKARTA ---
 function startJakartaClock() {
     if(clockInterval) clearInterval(clockInterval);
     clockInterval = setInterval(() => {
@@ -134,7 +132,7 @@ function getJakartaTimestamp() {
     }).format(new Date()).replace(/\./g, ':');
 }
 
-// --- 5. MANAGEMENT FUNGSI KONTROL GERBANG AKSES UJIAN ---
+// --- 5. LOGIKA TOMBOL BUKA/TUTUP GERBANG AKSES ADMIN ---
 function updateGateUI() {
     if (isGateOpen) {
         gateStatusBadge.className = "gate-status open";
@@ -153,25 +151,24 @@ btnGateOpen.addEventListener('click', () => {
     isGateOpen = true;
     localStorage.setItem('exambro_gate_status', 'open');
     updateGateUI();
-    addLog("SYSTEM", `[${getJakartaTimestamp()} WIB] KONTROL: Admin membuka akses gerbang masuk ujian.`);
+    addLog("SYSTEM", `[${getJakartaTimestamp()} WIB] ADMIN: Membuka gerbang akses masuk ujian.`);
     renderLogs();
-    showToast("Gerbang akses ujian berhasil DIBUKA untuk siswa.", "success");
+    showToast("Gerbang akses masuk ujian sukses DIBUKA.", "success");
 });
 
 btnGateClose.addEventListener('click', () => {
     isGateOpen = false;
     localStorage.setItem('exambro_gate_status', 'closed');
     updateGateUI();
-    addLog("SYSTEM", `[${getJakartaTimestamp()} WIB] KONTROL: Admin menutup total gerbang masuk ujian.`);
+    addLog("SYSTEM", `[${getJakartaTimestamp()} WIB] ADMIN: Menutup total gerbang masuk ujian.`);
     renderLogs();
-    showToast("Gerbang akses ujian berhasil DITUTUP. Siswa tidak bisa masuk!", "danger");
+    showToast("Gerbang akses ujian berhasil DITUTUP total.", "danger");
 });
 
-// --- 6. INTEGRASI KAMERA SCANNER BARCODE SOAL ---
+// --- 6. SCANNER CAMERA (LANGSUNG MEMBUKA TAUTAN GOOGLE FORM) ---
 btnOpenScanner.addEventListener('click', () => {
-    // PROTEKSI UTAMA: Cek apakah Admin sedang menutup akses gerbang ujian
     if (!isGateOpen) {
-        showToast("Gagal Masuk! Akses ujian saat ini ditutup/dikunci oleh Admin.", "danger");
+        showToast("Masuk Ditolak! Gerbang pengerjaan soal saat ini dikunci oleh Admin.", "danger");
         return;
     }
     scannerModal.classList.add('open');
@@ -181,25 +178,24 @@ btnOpenScanner.addEventListener('click', () => {
 
 function onScanSuccess(decodedText, decodedResult) {
     if (decodedText.startsWith('http://') || decodedText.startsWith('https://')) {
-        // Cek kembali perlindungan gerbang sebelum merender iframe soal
         if (!isGateOpen) {
-            showToast("Akses mendadak dikunci oleh Admin!", "danger");
+            showToast("Akses mendadak dikunci oleh Pusat!", "danger");
             html5QrcodeScanner.clear();
-            scannerModal.classList.remove('open');
+            scannerModal.remove();
             return;
         }
-        
-        showToast("Barcode valid! Memuat perangkat dan mengunci lembar soal...", "success");
+        showToast("Barcode terbaca! Membuka halaman soal ujian...", "success");
         html5QrcodeScanner.clear();
         scannerModal.classList.remove('open');
         
         currentUser = "Siswa (Scan Barcode)";
         switchPage('exam-page');
         
+        // Membuka tautan URL Google Form hasil scan langsung di dalam iframe Exambro
         examIframe.src = decodedText;
         startExamSession();
     } else {
-        showToast("Isi Barcode salah! Bukan tautan website lembar soal.", "danger");
+        showToast("Isi QR Code / Barcode salah! Bukan tautan link ujian.", "danger");
     }
 }
 
@@ -211,7 +207,7 @@ btnCloseScanner.addEventListener('click', () => {
     showToast("Pemindaian barcode dibatalkan.", "info");
 });
 
-// --- 7. SISTEM LOGIN BIOMETRIK & KODE MANUAL ---
+// --- 7. HANDLING LOGIN INTERACTION ---
 async function checkBiometricSupport() {
     if (window.PublicKeyCredential && typeof window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function') {
         try {
@@ -242,10 +238,10 @@ btnBiometric.addEventListener('click', async () => {
             switchPage('admin-page');
             addLog("SYSTEM", `Admin [Dennis Septiano] masuk via Sidik Jari pada pukul ${getJakartaTimestamp()} WIB.`);
             renderLogs();
-            showToast("Login Biometrik Berhasil! Selamat Datang Dennis Septiano.", "success");
+            showToast("Otentikasi Berhasil! Selamat Datang Dennis Septiano.", "success");
         }
     } catch (err) {
-        showToast("Otentikasi sidik jari gagal atau dibatalkan.", "danger");
+        showToast("Sidik jari tidak terdaftar atau dibatalkan.", "danger");
     }
 });
 
@@ -261,16 +257,22 @@ loginForm.addEventListener('submit', (e) => {
         showToast("Selamat Datang Admin Dennis Septiano.", "success");
     } else {
         if (!isGateOpen) {
-            showToast("Akses masuk ditutup oleh Admin!", "danger");
+            showToast("Gerbang pengerjaan ditutup!", "danger");
             return;
         }
-        if (inputUser.startsWith('http')) {
-            currentUser = "Siswa (Manual Tautan)";
+        // Jika kolom kosong atau berisi kata 'soal', buka form ujian default yang diberikan
+        if (inputUser === "" || inputUser.toLowerCase() === "soal") {
+            currentUser = "Siswa (Default Link)";
+            switchPage('exam-page');
+            examIframe.src = DEFAULT_EXAM_URL;
+            startExamSession();
+        } else if (inputUser.startsWith('http')) {
+            currentUser = "Siswa (Manual Link)";
             switchPage('exam-page');
             examIframe.src = inputUser;
             startExamSession();
         } else {
-            showToast("Gunakan tombol 'Scan Barcode Soal' atau input URL lengkap!", "danger");
+            showToast("Masukkan kode admin atau gunakan tombol 'Scan Barcode Soal'!", "danger");
         }
     }
 });
@@ -280,20 +282,17 @@ function switchPage(pageId) {
     document.getElementById(pageId).classList.add('active');
 }
 
-// --- 8. LIVE PENGAWASAN LAYAR BELAH (ANTI SPLIT-SCREEN) ---
+// --- 8. REALTIME MONITOR LOCK (ANTI LAYAR BELAH) ---
 function startExamSession() {
     isExamActive = true;
     violationCount = 0;
     startJakartaClock();
     initAudioEngine();
 
-    // Deteksi nama device otomatis siswa yang masuk
-    const deviceSiswa = getDeviceName();
-
-    addLog("SYSTEM", `Siswa masuk ujian menggunakan DEVICE: [${deviceSiswa}] pada pukul ${getJakartaTimestamp()} WIB.`);
+    const currentDevice = getDeviceName();
+    addLog("SYSTEM", `Siswa terhubung menggunakan: [${currentDevice}] menuju lembar Google Form.`);
     renderLogs();
 
-    // Jalankan deteksi pengunci layar belah / kehilangan fokus tab
     window.addEventListener('blur', reportViolation);
     document.addEventListener('visibilitychange', handleVisibility);
 }
@@ -306,17 +305,17 @@ function reportViolation() {
     if (!isExamActive) return;
     violationCount++;
     const timestamp = getJakartaTimestamp();
-    const deviceSiswa = getDeviceName();
+    const currentDevice = getDeviceName();
     
-    // Bunyikan sirene kencang di level gain browser 0.5
+    // Aktifkan sirene paksa setengah volume
     playSecureAlarm();
     
-    showToast(`ALARM! Dilarang membelah layar (Split Screen) atau pindah tab!`, "danger");
-    addLog("CHEAT", `[${timestamp} WIB] PELANGGARAN: Siswa di perangkat [${deviceSiswa}] mencoba membelah layar/buka tab lain! (Ke-${violationCount})`);
+    showToast(`KECURANGAN TERDETEKSI! Dilarang membelah layar (Split-Screen)!`, "danger");
+    addLog("CHEAT", `[${timestamp} WIB] PELANGGARAN: Siswa di perangkat [${currentDevice}] mencoba split-screen / pindah tab! (Ke-${violationCount})`);
     renderLogs();
 }
 
-// --- 9. TOMBOL KELUAR VALIDASI TEKS "Selesai" ---
+// --- 9. TOMBOL FINISH HARUS KETIK "Selesai" ---
 btnTriggerLogout.addEventListener('click', () => {
     logoutModal.classList.add('open');
     logoutConfirmInput.value = "";
@@ -339,11 +338,11 @@ btnCancelLogout.addEventListener('click', () => {
 btnFinalLogout.addEventListener('click', () => {
     logoutModal.classList.remove('open');
     stopSecureAlarm();
-    showToast("Sesi pengerjaan ditutup dengan aman.", "success");
+    showToast("Ujian diselesaikan dengan aman.", "success");
     resetAppState();
 });
 
-// --- 10. MANAGEMENT REKAP LOG LOCALSTORAGE ---
+// --- 10. REKAP LOG STORAGE CONSOLE ---
 function addLog(type, message) {
     let logs = JSON.parse(localStorage.getItem('exambro_logs')) || [];
     logs.push({ type, message });
@@ -354,7 +353,7 @@ function renderLogs() {
     logOutput.innerHTML = "";
     let logs = JSON.parse(localStorage.getItem('exambro_logs')) || [];
     if (logs.length === 0) {
-        logOutput.innerHTML = '<div class="log-item system">[SYSTEM] Belum ada aktivitas terekam.</div>';
+        logOutput.innerHTML = '<div class="log-item system">[SYSTEM] Menunggu aktivitas pengerjaan soal siswa...</div>';
         return;
     }
     logs.forEach(item => {
@@ -367,7 +366,7 @@ function renderLogs() {
 }
 
 document.getElementById('btn-clear-log').addEventListener('click', () => {
-    if(confirm("Hapus seluruh catatan riwayat kecurangan dan nama device?")) {
+    if(confirm("Hapus seluruh daftar rekaman kecurangan dan nama device?")) {
         localStorage.removeItem('exambro_logs');
         renderLogs();
     }
@@ -386,7 +385,7 @@ function resetAppState() {
 
 document.getElementById('btn-admin-logout').addEventListener('click', resetAppState);
 
-// Inisialisasi awal UI saat memuat halaman pertama kali
+// Render tampilan awal gerbang akses
 updateGateUI();
 renderLogs();
-                              
+    
